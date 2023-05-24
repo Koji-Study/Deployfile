@@ -1,0 +1,31 @@
+global:
+  enabled: false
+# Configure your Consul servers in this section.
+server:
+  enabled: false
+# Configure Consul clients in this section
+externalServers:
+  enabled: true
+  hosts: ["1.1.1.1","2.2.2.2","3.3.3.3"] #集群外consul server节点
+  grpcPort: 8502
+  httpsPort: 8500
+client:
+  image: "consul:1.14"
+  join: ["1.1.1.1","2.2.2.2","3.3.3.3"] #集群外consul server节点
+  dataDirectoryHostPath: "/mnt/data/helm-consul"
+  grpc: true
+  exposeGossipPorts: true
+  resources:
+  requests:
+    memory: '256Mi'
+    cpu: '0.5'
+  limits:
+    memory: '12Gi'
+    cpu: '1'
+syncCatalog:
+  enabled: true
+  default: false
+  toConsul: true
+  toK8S: false
+tls:
+  enabled: false
