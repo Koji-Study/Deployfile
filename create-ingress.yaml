@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deploy
+  namespace: testhao
+spec:
+  replicas: 3       #pod的副本个数
+  selector:         #选择器，通过标签app: nginx与pod产生联系
+    matchLabels:
+      app: nginx
+  template:         #pod的模板
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - image: wanghao7/nginx:01
+        name: nginx
+        ports:
+        - containerPort: 80
+          protocol: TCP
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-svc
+  namespace: testhao
+spec:
+  selector:
+    app: nginx
+  type: NodePort
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+---
+
+apiVersion: networking.k8s.io/v1  #版本号
+kind: Ingress     #资源类型
+metadata:
+  name: ing #ingress名字
+  namespace: testhao      #命名空间
+spec:   #详细设置     number: 80
+  ingressClassName: nginx   #必须要设置，否则ingress不起作用
+  rules:   #配置的规则
+  - host: example.testhao.com  #域名
+    http:      #https规则
+      paths:
+      - path: /
+        pathType: ImplementationSpecific #
+        backend:
+          service:
+            name: nginx-svc
+            port:
+              number: 80
