@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  namespace: testhao
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - image: wanghao7/nginx:01
+        name: nginx
+        ports:
+        - containerPort: 80
+          protocol: TCP
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginxservice
+  namespace: testhao
+  annotations:
+    'consul.hashicorp.com/service-sync': 'true' #通过注解来注册服务到consul
+spec:
+   type: NodePort
+   ports:
+   - port: 80
+     protocol: TCP
+     targetPort: 80
+   selector:
+     app: nginx
