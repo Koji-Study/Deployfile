@@ -1,3 +1,4 @@
+#helm install consul hashicorp/consul -n qke-consul -f config.yaml --version 1.0.1
 global:
   enabled: false
 # Configure your Consul servers in this section.
