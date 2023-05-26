@@ -1,0 +1,44 @@
+variables:
+  #部署路径
+  deploy_path: "/mnt/data/cicd/project/env"
+  #部署服务器地址
+  ecs_ip: "1.1.1.1"
+
+stages: # 分段
+  - deploy
+
+before_script:
+  - echo "======== before script ========"
+  - export NG_CLI_ANALYTICS=ci
+
+deploy:
+  when: manual  #手动点击执行ci
+  tags:
+    - runner-name
+  stage: deploy 
+  only:
+    refs:
+      - dev  #分支名
+    changes:  #哪些文件修改出发CI
+      - code/**/*
+      - .gitlab-ci.yml
+      - skaffold/**/*
+  script:
+    - echo "======== start script ========"
+    #删除不相关的文件
+    - sshpass -p ${userpasswd} ssh -o StrictHostKeychecking=no username@${ecs_ip}  "cd $deploy_path && ls|grep -v "node_modules" |xargs rm -rf"
+    - sshpass -p ${userpasswd} scp -r -o StrictHostKeychecking=no code/* username@${ecs_ip}:$deploy_path
+    # 编译服务器开始打包编译
+    - echo "begin to install"
+    - sshpass -p ${userpasswd} ssh -o StrictHostKeychecking=no username@${ecs_ip} "cd ${deploy_path}/src && npm install --registry=https://registry.npmmirror.com/"
+    - echo "begin to build"
+    - sshpass -p ${userpasswd} ssh -o StrictHostKeychecking=no username@${ecs_ip} "cd ${deploy_path}/src && npm run build"
+    - echo "前端编译成功，拷贝到镜像打包服务器"
+    - sshpass -p ${userpasswd} ssh -o StrictHostKeychecking=no username@${ecs_ip} "cd ${deploy_path}/dist/ && tar czvf tarname.tar.gz my-project/*"
+    - sshpass -p ${userpasswd} ssh -o StrictHostKeychecking=no username@${ecs_ip} "cd ${deploy_path}/dist/ && mv tarname.tar.gz $deploy_path"
+    - echo "使用skaffold进行服务部署"
+    - sshpass -p ${userpasswd} ssh -o StrictHostKeychecking=no username@${ecs_ip} "docker login --username=username registry-address-ip -p ${registry_pwd}"
+    - sshpass -p ${userpasswd} scp -r -o StrictHostKeychecking=no skaffold/env/* username@${ecs_ip}:${deploy_path}
+    - sshpass -p ${userpasswd} ssh -o StrictHostKeychecking=no username@${ecs_ip} "cd ${deploy_path} && skaffold run --default-repo registry-address-ip/registry_name"
+    - echo "---部署完成---"
+  allow_failure: false
