@@ -25,6 +25,8 @@ client:
     cpu: '1'
 syncCatalog:
   enabled: true
+   #多个k8s集群上部署时，需要指定nodename，不然一个集群client上注册的服务会被另外一个集群上的client删除
+  consulNodeName: "k8s-cluster-1"
   default: false
   toConsul: true
   toK8S: false
